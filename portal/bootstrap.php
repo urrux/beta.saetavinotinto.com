@@ -7,9 +7,13 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
     session_name('saeta_portal');
+    // Derive cookie path from app_url so subdirectory deployments work
+    // (production /portal AND local http://host/beta.saetavinotinto.com/portal).
+    $appUrlPath = parse_url((string) $config['app_url'], PHP_URL_PATH);
+    $sessionCookiePath = is_string($appUrlPath) && $appUrlPath !== '' ? $appUrlPath : '/portal';
     session_set_cookie_params([
         'lifetime' => 0,
-        'path' => '/portal',
+        'path' => $sessionCookiePath,
         'secure' => strpos((string) $config['app_url'], 'https://') === 0,
         'httponly' => true,
         'samesite' => 'Lax',
