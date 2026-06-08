@@ -1,0 +1,63 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Server-managed / not source
+.well-known/
+cgi-bin/
+.htpasswd
+
+# Secrets — NEVER commit
+*.env
+.env*
+*.key
+*.pem
+*credentials*
+*secrets*
+
+# Server logs (regenerated on the server, never useful in git)
+error_log
+portal/error_log
+*.log
+
+# Database dumps (data) — never commit
+# NOTE: schema files like portal/database/schema.mysql.sql ARE tracked
+# (they're source). Patterns below only catch dumps.
+*-before.sql
+*-after.sql
+*-backup.sql
+*-dump.sql
+database-before.sql
+database-after.sql
+*.sql.gz
+*.sql.bz2
+
+# User-uploaded content (lives on production server; do not version)
+portal/uploads/
+
+# Local rollback / audit snapshots (pre-git versioning; git replaces these)
+_rollback/
+_audit/
+
+# Generic backups
+*.bak
+*.backup
+*.orig
+
+# Cache / temp
+*.cache
+.cache/
+tmp/
+cache/
+
+# Pull tarball (just in case)
+beta-pull.tgz
+
+# Deploy manifest — managed by .cpanel.yml on the server, never in repo
+.deploy-manifest

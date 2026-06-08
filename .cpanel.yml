@@ -1,0 +1,42 @@
+---
+# tar-based deploy with manifest-tracked deletions.
+#
+# Why a manifest: the cPanel host has no rsync, and plain tar does not
+# propagate file deletions. The manifest tracks what each deploy put
+# on the server. Next deploy diffs old vs new manifest and removes
+# files that fell off the repo — while server-side-only files
+# (portal/uploads/, _rollback/, error_log, etc.) are preserved because
+# they never enter the manifest.
+#
+# Critical flags / steps — do not remove:
+#   --no-overwrite-dir on tar extract preserves the docroot's own
+#       permissions. Without it, tar applies the repo root's perms to
+#       the docroot, dropping it from 750 to 700 and triggering 403
+#       Forbidden site-wide. This bit us on sietebit; do not repeat.
+#   Trailing chmod 750 restores the canonical docroot perms as a final
+#       safety net even if anything else perturbs them.
+#
+# The manifest file lives at $DEPLOYPATH/.deploy-manifest on the
+# server. Do NOT delete it from the server manually — it is how the
+# next deploy knows what is safe to remove. If it is ever lost, the
+# next deploy will fall back to no-delete behavior (the old tar-only
+# approach) and rebuild the manifest from scratch.
+
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/sietebit/beta.saetavinotinto.com/
+    - export MANIFEST_FILE="${DEPLOYPATH}.deploy-manifest"
+    - export NEW_MANIFEST=/tmp/beta-saeta-manifest-new
+    - export OLD_MANIFEST=/tmp/beta-saeta-manifest-old
+    # 1. Build new manifest: tracked files minus deploy-excluded meta files.
+    - /bin/git ls-files | /bin/grep -vxE '\.gitattributes|\.gitignore|\.cpanel\.yml|CLAUDE\.md|README\.md' | /bin/sort > "$NEW_MANIFEST"
+    # 2. If an old manifest exists, delete files that fell off the manifest.
+    - if [ -f "$MANIFEST_FILE" ]; then /bin/sort "$MANIFEST_FILE" > "$OLD_MANIFEST"; /bin/comm -23 "$OLD_MANIFEST" "$NEW_MANIFEST" | while IFS= read -r f; do [ -n "$f" ] && /bin/rm -f "${DEPLOYPATH}${f}"; done; /bin/rm -f "$OLD_MANIFEST"; fi
+    # 3. Tar-extract the new repo contents into the docroot.
+    - /bin/tar cf - --exclude='./.git' --exclude='./.gitattributes' --exclude='./.gitignore' --exclude='./.cpanel.yml' --exclude='./CLAUDE.md' --exclude='./README.md' . | /bin/tar --no-overwrite-dir -xf - -C "$DEPLOYPATH"
+    # 4. Save the new manifest at the docroot for the next deploy.
+    - /bin/cp "$NEW_MANIFEST" "$MANIFEST_FILE"
+    # 5. Restore canonical docroot permissions.
+    - /bin/chmod 750 "$DEPLOYPATH"
+    # 6. Cleanup.
+    - /bin/rm -f "$NEW_MANIFEST"
