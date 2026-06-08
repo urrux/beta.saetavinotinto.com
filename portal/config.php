@@ -12,6 +12,11 @@ $defaults = [
     'mail_from' => 'halamadrid@saetavinotinto.com',
     'mail_from_name' => 'Saeta Vinotinto',
     'admin_notification_email' => 'urrutiajm@gmail.com',
+    // Allowlist of emails that may reach superadmin features when paired with
+    // is_superadmin=1 on the user row. Hardcoded fuse — even a flipped
+    // is_superadmin flag in the DB cannot elevate someone outside this list.
+    // Override (or extend) via config.local.php for local/test environments.
+    'superadmin_emails' => ['urrutiajm@gmail.com'],
 ];
 
 $localFile = __DIR__ . '/config.local.php';

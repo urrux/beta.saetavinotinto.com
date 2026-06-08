@@ -327,8 +327,22 @@ function require_admin(): array
 
 function is_superadmin(array $user): bool
 {
-    return !empty($user['is_superadmin'])
-        && strtolower((string) ($user['email'] ?? '')) === 'urrutiajm@gmail.com';
+    if (empty($user['is_superadmin'])) {
+        return false;
+    }
+    $email = strtolower(trim((string) ($user['email'] ?? '')));
+    if ($email === '') {
+        return false;
+    }
+    global $config;
+    $rawList = (array) ($config['superadmin_emails'] ?? []);
+    $allowed = [];
+    foreach ($rawList as $candidate) {
+        if (is_string($candidate) && $candidate !== '') {
+            $allowed[] = strtolower(trim($candidate));
+        }
+    }
+    return in_array($email, $allowed, true);
 }
 
 function require_superadmin(): array
